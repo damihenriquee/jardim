@@ -1,0 +1,984 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0a1620"><style>:root{padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}body{margin:0}[hidden]{display:none!important}</style></head><body><title>Jardim do Fôlego</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Spectral:ital,wght@1,300;1,400&display=swap">
+<style>
+/* Layout: jardim noturno em tela cheia; painel translúcido na base com modo, ritmo e calma; gavetas flutuam acima do painel. */
+:root {
+  color-scheme: dark;
+  --ceu-topo: #0a1620;
+  --ceu-base: #1f4046;
+  --colina-1: #12302b;
+  --colina-2: #0c231f;
+  --colina-3: #081a17;
+  --tronco: #6f5b49;
+  --galho: #a99a82;
+  --folha: #6fb58f;
+  --luz: #f4d98c;
+  --luz-fundo: rgba(244, 217, 140, 0.13);
+  --lua: #efe9d0;
+  --texto: #e8f0ea;
+  --texto-2: #9fb6ac;
+  --painel: rgba(8, 20, 22, 0.76);
+  --gaveta: rgba(8, 20, 22, 0.95);
+  --linha: rgba(232, 240, 234, 0.15);
+  --fonte-corpo: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --fonte-cue: 'Spectral', Georgia, 'Times New Roman', serif;
+}
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--ceu-topo);
+  color: var(--texto);
+  font: 400 15px/1.45 var(--fonte-corpo);
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--luz); outline-offset: 2px; }
+#app { position: relative; height: 100%; overflow: hidden; --painel-h: 280px; }
+#jardim { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+.topo {
+  position: absolute; top: 0; left: 0; right: 0;
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+  padding: 14px 16px 0; pointer-events: none;
+}
+.topo h1 { margin: 0; font: italic 400 1.3rem/1.2 var(--fonte-cue); letter-spacing: 0.01em; text-wrap: balance; }
+.relogio { text-align: right; font-variant-numeric: tabular-nums; }
+.relogio b { display: block; font-weight: 500; font-size: 1.05rem; line-height: 1.2; }
+.relogio span { font-size: 0.75rem; color: var(--texto-2); }
+
+.cue {
+  position: absolute; left: 0; right: 0; top: 40%; transform: translateY(-50%);
+  display: grid; justify-items: center; gap: 6px; text-align: center;
+  pointer-events: none; opacity: 0;
+}
+.cue-fase { font: italic 300 clamp(1.8rem, 8vw, 2.8rem)/1 var(--fonte-cue); text-shadow: 0 2px 22px rgba(0, 0, 0, 0.7); }
+.cue-seg { font: 500 1.15rem/1 var(--fonte-corpo); font-variant-numeric: tabular-nums; color: var(--texto); text-shadow: 0 1px 14px rgba(0, 0, 0, 0.8); }
+.aviso {
+  position: absolute; left: 50%; top: 58px; transform: translateX(-50%);
+  width: min(520px, calc(100% - 32px)); box-sizing: border-box;
+  background: rgba(8, 20, 22, 0.9); border: 1px solid var(--linha); border-radius: 12px;
+  padding: 10px 14px; font-size: 0.875rem; line-height: 1.4; z-index: 3;
+}
+
+.painel {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  background: var(--painel);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  border-top: 1px solid var(--linha); border-radius: 22px 22px 0 0; z-index: 2;
+}
+.painel-in { max-width: 560px; margin-inline: auto; padding: 14px 16px 16px; display: grid; gap: 12px; }
+.modos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.modo {
+  border: 1px solid var(--linha); background: transparent; border-radius: 12px;
+  padding: 8px 6px; min-height: 50px; display: grid; gap: 1px; align-content: center; text-align: center;
+}
+.modo b { font-weight: 600; font-size: 0.9rem; }
+.modo small { font-size: 0.72rem; color: var(--texto-2); }
+.modo[aria-pressed="true"] { border-color: var(--luz); background: var(--luz-fundo); }
+.dica { margin: 0; font-size: 0.875rem; color: var(--texto-2); min-height: 2.9em; }
+
+.medidores { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 16px; align-items: end; }
+.med-rot { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--texto-2); }
+.med-val { font-size: 1.4rem; font-weight: 500; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.med-val small { font-size: 0.8rem; color: var(--texto-2); font-weight: 400; }
+.barra { height: 8px; border-radius: 99px; background: var(--linha); overflow: hidden; margin-top: 6px; }
+.barra i { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, var(--folha), var(--luz)); }
+
+.acoes { display: flex; gap: 8px; }
+.btn-prim {
+  flex: 1; min-height: 48px; border: 0; border-radius: 14px;
+  background: var(--luz); color: #1b1708; font-weight: 600; font-size: 1rem;
+}
+.btn-sec {
+  min-height: 48px; padding: 0 14px; border: 1px solid var(--linha); border-radius: 14px; background: transparent;
+}
+.btn-sec[aria-expanded="true"] { border-color: var(--luz); background: var(--luz-fundo); }
+.btn-sec:disabled { opacity: 0.6; cursor: default; }
+.mini { min-height: 36px; padding: 0 12px; border-radius: 10px; font-size: 0.85rem; }
+
+.gaveta {
+  position: absolute; left: 50%; transform: translateX(-50%); z-index: 2;
+  bottom: calc(var(--painel-h) + 10px);
+  width: min(560px, calc(100% - 32px)); box-sizing: border-box;
+  max-height: calc(100% - var(--painel-h) - 80px); overflow: auto;
+  background: var(--gaveta); border: 1px solid var(--linha); border-radius: 16px;
+  padding: 14px; display: grid; gap: 10px;
+}
+.gaveta h2 { margin: 0; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--texto-2); font-weight: 500; }
+.semente { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; padding-top: 8px; border-top: 1px solid var(--linha); }
+.semente i { width: 18px; height: 18px; border-radius: 50%; display: block; }
+.total { font-size: 0.875rem; color: var(--texto-2); margin: 0; font-variant-numeric: tabular-nums; }
+#onda { width: 100%; height: 84px; display: block; border-radius: 10px; background: rgba(232, 240, 234, 0.04); }
+.dados { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 16px; }
+.dados div { min-width: 0; }
+.dados dt { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--texto-2); }
+.dados dd { margin: 0; font-variant-numeric: tabular-nums; }
+.ajuste { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.ajuste > span { flex-basis: 100%; font-size: 0.75rem; color: var(--texto-2); }
+.ajuste button[aria-pressed="true"] { border-color: var(--luz); background: var(--luz-fundo); }
+
+@media (prefers-reduced-motion: reduce) { .cue { transition: none; } }
+</style>
+
+<div id="app">
+  <canvas id="jardim" role="img" aria-label="Jardim noturno. A árvore cresce e floresce quando sua respiração fica lenta e regular."></canvas>
+
+  <header class="topo">
+    <h1>Jardim do Fôlego</h1>
+    <div class="relogio"><b id="tempo">00:00</b><span id="acum">acumulado 0,0 min</span></div>
+  </header>
+
+  <div class="aviso" id="aviso" role="status" hidden></div>
+  <div class="cue" id="cue" aria-hidden="true"><span class="cue-fase" id="cueFase"></span><span class="cue-seg" id="cueSeg"></span></div>
+
+  <section class="gaveta" id="gSementes" hidden aria-label="Sementes">
+    <h2>Sementes</h2>
+    <p class="total">Minutos de calma acumulados: <span id="totalCalma">0,0</span></p>
+    <div id="listaSementes"></div>
+  </section>
+
+  <section class="gaveta" id="gDiag" hidden aria-label="Sinal da respiração">
+    <h2>Sinal da respiração</h2>
+    <canvas id="onda"></canvas>
+    <dl class="dados">
+      <div><dt>Fonte</dt><dd id="dFonte">guiado</dd></div>
+      <div><dt>Período</dt><dd id="dPer">—</dd></div>
+      <div><dt>Regularidade</dt><dd id="dReg">—</dd></div>
+      <div><dt>Qualidade do sinal</dt><dd id="dQual">—</dd></div>
+    </dl>
+    <div class="ajuste">
+      <span>Microfone: quantos picos de som por respiração</span>
+      <button class="btn-sec mini" data-fator="2" aria-pressed="true">2 picos (inspira e expira)</button>
+      <button class="btn-sec mini" data-fator="1" aria-pressed="false">1 pico (só expira)</button>
+    </div>
+    <div class="ajuste">
+      <span>Barriga: se o gráfico sobe ao expirar, inverta</span>
+      <button class="btn-sec mini" id="btnInv" aria-pressed="false">Inverter fase</button>
+    </div>
+    <div class="ajuste">
+      <span>Testes</span>
+      <button class="btn-sec mini" id="btnPrev">Prévia +1 min de calma</button>
+      <button class="btn-sec mini" id="btnZerar">Zerar jardim</button>
+    </div>
+  </section>
+
+  <section class="painel" id="painel">
+    <div class="painel-in">
+      <div class="modos" role="group" aria-label="Como medir a respiração">
+        <button class="modo" data-modo="guiado" aria-pressed="true"><b>Guiado</b><small>sem sensor</small></button>
+        <button class="modo" data-modo="microfone" aria-pressed="false"><b>Microfone</b><small>som do sopro</small></button>
+        <button class="modo" data-modo="barriga" aria-pressed="false"><b>Barriga</b><small>sensor de movimento</small></button>
+      </div>
+      <p class="dica" id="dica"></p>
+      <div class="medidores">
+        <div>
+          <div class="med-rot">Ritmo</div>
+          <div class="med-val"><span id="taxa">—</span> <small>resp/min</small></div>
+        </div>
+        <div>
+          <div class="med-rot" id="rotCalma">Calma</div>
+          <div class="med-val" id="calma">0%</div>
+          <div class="barra"><i id="barra"></i></div>
+        </div>
+      </div>
+      <div class="acoes">
+        <button class="btn-prim" id="btnIniciar">Começar</button>
+        <button class="btn-sec" id="btnSementes" aria-expanded="false">Sementes</button>
+        <button class="btn-sec" id="btnDiag" aria-expanded="false">Sinal</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+'use strict';
+document.documentElement.lang = 'pt-BR';
+
+// <nucleo>
+const FS = 10; // amostras por segundo no buffer de análise
+const media = (a) => { let s = 0; for (let i = 0; i < a.length; i++) s += a[i]; return a.length ? s / a.length : 0; };
+const desvio = (a) => { const m = media(a); let s = 0; for (let i = 0; i < a.length; i++) { const d = a[i] - m; s += d * d; } return Math.sqrt(s / Math.max(1, a.length)); };
+const limita = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const suave = (e0, e1, x) => { const t = limita((x - e0) / (e1 - e0)); return t * t * (3 - 2 * t); };
+
+function tirarTendencia(a) {
+  const n = a.length;
+  if (n < 2) return a.slice();
+  let sx = 0, sy = 0, sxx = 0, sxy = 0;
+  for (let i = 0; i < n; i++) { sx += i; sy += a[i]; sxx += i * i; sxy += i * a[i]; }
+  const den = n * sxx - sx * sx;
+  const b = den ? (n * sxy - sx * sy) / den : 0;
+  const c = (sy - b * sx) / n;
+  const out = new Array(n);
+  for (let i = 0; i < n; i++) out[i] = a[i] - (b * i + c);
+  return out;
+}
+
+// Período dominante por autocorrelação (não enviesada). Escolhe o menor pico que chega perto do máximo.
+function analisar(buf, fs, minAmp) {
+  const n = buf.length;
+  if (n < fs * 16) return null;
+  const x = tirarTendencia(buf);
+  const amp = desvio(x);
+  const qual = suave(minAmp, 3 * minAmp, amp);
+  let v = 0;
+  for (let i = 0; i < n; i++) v += x[i] * x[i];
+  v /= n;
+  if (v < 1e-12) return { periodo: 0, reg: 0, amp, qual: 0 };
+  const lmin = Math.round(fs * 1.5);
+  const lmax = Math.min(Math.round(fs * 14), Math.floor(n * 0.6));
+  const ac = new Array(lmax + 3).fill(0);
+  for (let l = lmin - 1; l <= lmax + 1; l++) {
+    let s = 0;
+    for (let i = 0; i + l < n; i++) s += x[i] * x[i + l];
+    ac[l] = s / (n - l) / v;
+  }
+  const picos = [];
+  let vm = 0;
+  for (let l = lmin; l <= lmax; l++) {
+    if (ac[l] > ac[l - 1] && ac[l] >= ac[l + 1] && ac[l] > 0.1) {
+      picos.push(l);
+      if (ac[l] > vm) vm = ac[l];
+    }
+  }
+  if (!picos.length) return { periodo: 0, reg: 0, amp, qual };
+  let lag = picos[0];
+  for (const l of picos) { if (ac[l] >= 0.85 * vm) { lag = l; break; } }
+  const a0 = ac[lag - 1], a1 = ac[lag], a2 = ac[lag + 1];
+  const den = a0 - 2 * a1 + a2;
+  const off = den !== 0 ? 0.5 * (a0 - a2) / den : 0;
+  return { periodo: (lag + limita(off, -1, 1)) / fs, reg: limita(a1), amp, qual };
+}
+
+// Calma = ritmo lento + regularidade, só conta se o sinal existe e é periódico.
+function pontuarCalma(periodo, reg, qual) {
+  const taxa = 60 / periodo;
+  const ritmo = 1 - suave(6.5, 16, taxa);
+  const regular = suave(0.2, 0.8, reg);
+  const porta = suave(0.15, 0.45, reg);
+  return { taxa, calma: qual * porta * (0.6 * ritmo + 0.4 * regular) };
+}
+
+// Eixo de maior variação dos três eixos do acelerômetro (iteração de potência na covariância).
+function eixoPrincipal(X, Y, Z, prev) {
+  const n = X.length;
+  const mx = media(X), my = media(Y), mz = media(Z);
+  let xx = 0, yy = 0, zz = 0, xy = 0, xz = 0, yz = 0;
+  for (let i = 0; i < n; i++) {
+    const a = X[i] - mx, b = Y[i] - my, c = Z[i] - mz;
+    xx += a * a; yy += b * b; zz += c * c; xy += a * b; xz += a * c; yz += b * c;
+  }
+  let v = prev ? prev.slice() : [0.57, 0.58, 0.59];
+  for (let k = 0; k < 24; k++) {
+    const w = [xx * v[0] + xy * v[1] + xz * v[2], xy * v[0] + yy * v[1] + yz * v[2], xz * v[0] + yz * v[1] + zz * v[2]];
+    const m = Math.hypot(w[0], w[1], w[2]) || 1;
+    v = [w[0] / m, w[1] / m, w[2] / m];
+  }
+  if (prev && v[0] * prev[0] + v[1] * prev[1] + v[2] * prev[2] < 0) v = [-v[0], -v[1], -v[2]];
+  return v;
+}
+// </nucleo>
+
+const $ = (s) => document.querySelector(s);
+const cv = $('#jardim'), ctx = cv.getContext('2d');
+const app = $('#app'), painel = $('#painel');
+const reduzMov = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const fmt1 = (n) => n.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const fmtTempo = (s) => { s = Math.floor(s); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
+
+// ---------- cores a partir dos tokens ----------
+const T = {};
+function lerTokens() {
+  const cs = getComputedStyle(document.documentElement);
+  for (const k of ['--ceu-topo', '--ceu-base', '--colina-1', '--colina-2', '--colina-3', '--tronco', '--galho', '--folha', '--luz', '--lua', '--texto']) T[k] = cs.getPropertyValue(k).trim();
+}
+const hex = (h) => { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+const misturar = (a, b, t) => { const A = hex(a), B = hex(b); return 'rgb(' + A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(',') + ')'; };
+const rgba = (h, a) => { const c = hex(h); return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; };
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// ---------- espécies e progresso ----------
+const ESPECIES = [
+  { id: 'ipe-amarelo', nome: 'Ipê-amarelo', cor: '#f5c93a', miolo: '#b97a14', desbloqueio: 0, semente: 7, perdeFolhas: true },
+  { id: 'ipe-rosa', nome: 'Ipê-rosa', cor: '#ee8fb4', miolo: '#a8386a', desbloqueio: 8, semente: 23, perdeFolhas: true },
+  { id: 'jacaranda', nome: 'Jacarandá', cor: '#a18ae6', miolo: '#4b3a96', desbloqueio: 25, semente: 41, perdeFolhas: false },
+  { id: 'cerejeira', nome: 'Cerejeira', cor: '#f8d3dd', miolo: '#c4587a', desbloqueio: 50, semente: 59, perdeFolhas: false },
+];
+const T_ARV = 5;   // minutos de calma plena para a árvore crescer toda
+const DEMO = 4.6;  // jardim de exemplo mostrado na primeira visita
+const CHAVE = 'jardim-folego-v1';
+const padrao = () => ({ visto: false, total: 0, prog: {}, sel: 'ipe-amarelo', cfg: { fatorMic: 2, inverter: false } });
+function carregar() {
+  try {
+    const j = JSON.parse(localStorage.getItem(CHAVE) || 'null');
+    if (j && typeof j === 'object') {
+      const p = padrao();
+      return {
+        visto: !!j.visto, total: +j.total || 0,
+        prog: j.prog && typeof j.prog === 'object' ? j.prog : {},
+        sel: ESPECIES.some((e) => e.id === j.sel) ? j.sel : p.sel,
+        cfg: Object.assign(p.cfg, j.cfg || {}),
+      };
+    }
+  } catch (e) { /* sem armazenamento */ }
+  return padrao();
+}
+function salvar() { try { localStorage.setItem(CHAVE, JSON.stringify(estado)); } catch (e) { /* ignora */ } }
+let estado = carregar();
+
+// ---------- árvore procedural ----------
+function criarArvore(seed) {
+  const r = mulberry32(seed), gal = [], PROF = 8;
+  function ramo(pai, ang, len, w, prof, nasc) {
+    const dur = 0.24 * Math.pow(0.84, prof);
+    const i = gal.length;
+    const b = { pai, ang, len, w, prof, nasc, dur, fase: r() * 6.283, folhas: [], flores: [], p: 0, ox: 0, oy: 0, tx: 0, ty: 0 };
+    gal.push(b);
+    if (prof >= 3) {
+      const nf = prof >= 6 ? 3 : 2;
+      for (let k = 0; k < nf; k++) b.folhas.push({ dx: (r() - 0.5) * 2, dy: (r() - 0.5) * 2, r: 0.6 + r() * 0.7, tom: Math.floor(r() * 3) });
+    }
+    if (prof >= 5 && r() < 0.8) {
+      const nf = r() < 0.4 ? 2 : 1;
+      for (let k = 0; k < nf; k++) b.flores.push({ dx: (r() - 0.5) * 2.2, dy: (r() - 0.5) * 2.2, lim: r() * 0.85, rot: r() * 6.283 });
+    }
+    if (prof < PROF) {
+      const nfil = prof < 3 && r() < 0.4 ? 3 : (prof >= 3 && r() < 0.15 ? 1 : 2);
+      for (let k = 0; k < nfil; k++) {
+        const sp = (k - (nfil - 1) / 2) * (0.45 + r() * 0.25) + (r() - 0.5) * 0.25;
+        let a = ang + sp;
+        a += (-Math.PI / 2 - a) * 0.10;
+        ramo(i, a, len * (0.72 + r() * 0.13), w * 0.68, prof + 1, nasc + dur * 0.62);
+      }
+    }
+  }
+  ramo(-1, -Math.PI / 2 + (r() - 0.5) * 0.12, 0.30, 0.05, 0, 0);
+  let fim = 0;
+  for (const b of gal) fim = Math.max(fim, b.nasc + b.dur);
+  for (const b of gal) { b.nasc /= fim; b.dur /= fim; }
+  let minY = 0, maxX = 0;
+  for (const b of gal) {
+    const ox = b.pai < 0 ? 0 : gal[b.pai].tx, oy = b.pai < 0 ? 0 : gal[b.pai].ty;
+    b.tx = ox + Math.cos(b.ang) * b.len; b.ty = oy + Math.sin(b.ang) * b.len;
+    minY = Math.min(minY, b.ty); maxX = Math.max(maxX, Math.abs(b.tx));
+  }
+  return { gal, altU: -minY, metade: Math.max(maxX, 0.2) };
+}
+
+// ---------- geometria da tela ----------
+let W = 0, H = 0, dpr = 1, chao = 0, painelH = 280, raizY = 0, baseX = 0, esc = 1, alturaArv = 300;
+const fundoC = document.createElement('canvas'), frenteC = document.createElement('canvas');
+let arvore = null, especie = ESPECIES[0], coresGalho = [], coresFolha = [];
+const COLINAS = [
+  { base: -0.06, amp: 0.018, f1: 1.3, f2: 3.1, p: 0.4 },
+  { base: 0.0, amp: 0.012, f1: 1.1, f2: 2.7, p: 1.7 },
+  { base: 0.05, amp: 0.010, f1: 0.9, f2: 2.3, p: 2.9 },
+];
+const yColina = (k, x01) => { const c = COLINAS[k]; return chao + H * (c.base + c.amp * (Math.sin(x01 * c.f1 * 6.283 + c.p) * 0.7 + Math.sin(x01 * c.f2 * 6.283 + c.p * 2) * 0.3)); };
+const rs = mulberry32(99);
+const estrelas = Array.from({ length: 70 }, () => ({ x: rs(), y: rs() * 0.5, r: 0.5 + rs() * 1.1, ph: rs() * 6.283 }));
+const florChao = Array.from({ length: 40 }, () => ({ x: 0.04 + rs() * 0.92, dy: rs(), tom: rs(), h: 5 + rs() * 6 }));
+
+function colina(c, k, cor) {
+  c.fillStyle = cor; c.beginPath(); c.moveTo(0, H);
+  for (let x = 0; x <= W + 6; x += 6) c.lineTo(x, yColina(k, Math.min(1, x / W)));
+  c.lineTo(W, H); c.closePath(); c.fill();
+}
+function pintarFundo() {
+  const c = fundoC.getContext('2d');
+  c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, W, H);
+  const g = c.createLinearGradient(0, 0, 0, chao);
+  g.addColorStop(0, T['--ceu-topo']); g.addColorStop(1, T['--ceu-base']);
+  c.fillStyle = g; c.fillRect(0, 0, W, H);
+  const lx = W * 0.8, ly = Math.max(120, H * 0.2), lr = Math.max(14, Math.min(W, H) * 0.035);
+  const lg = c.createRadialGradient(lx, ly, lr * 0.8, lx, ly, lr * 5);
+  lg.addColorStop(0, rgba(T['--lua'], 0.26)); lg.addColorStop(1, rgba(T['--lua'], 0));
+  c.fillStyle = lg; c.beginPath(); c.arc(lx, ly, lr * 5, 0, 6.283); c.fill();
+  c.fillStyle = T['--lua']; c.beginPath(); c.arc(lx, ly, lr, 0, 6.283); c.fill();
+  colina(c, 0, T['--colina-1']); colina(c, 1, T['--colina-2']);
+}
+function pintarFrente() {
+  const c = frenteC.getContext('2d');
+  c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, W, H);
+  colina(c, 2, T['--colina-3']);
+}
+function ajustarEscala() {
+  if (!arvore) return;
+  esc = Math.min(alturaArv / arvore.altU, (W * 0.47) / arvore.metade);
+  if (!isFinite(esc) || esc <= 0) esc = 1;
+}
+function layout() {
+  const r = app.getBoundingClientRect();
+  W = r.width; H = r.height;
+  if (!W || !H) return;
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  for (const c of [cv, fundoC, frenteC]) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); }
+  painelH = painel.offsetHeight;
+  app.style.setProperty('--painel-h', painelH + 'px');
+  chao = H - painelH * 0.8;
+  alturaArv = Math.max(120, (chao - 70) * 0.92);
+  baseX = W / 2; raizY = yColina(1, 0.5) + 2;
+  pintarFundo(); pintarFrente(); ajustarEscala();
+}
+
+// ---------- sensores ----------
+const mic = { ctx: null, an: null, td: null, stream: null, soma: 0, cont: 0, ema: null };
+const mov = { sx: 0, sy: 0, sz: 0, n: 0, recebeu: false, ativo: false };
+let bruto = [], bx = [], by = [], bz = [], viz = [], eixo = null;
+
+async function iniciarMic() {
+  if (!window.isSecureContext) throw new Error('Este endereço não é seguro. O navegador só libera o microfone em HTTPS.');
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('Este navegador não oferece acesso ao microfone.');
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+  } catch (e) {
+    throw new Error('O microfone foi bloqueado neste ambiente. Libere o acesso no navegador ou abra o arquivo hospedado em HTTPS.');
+  }
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const c = new AC();
+  if (c.state === 'suspended') { try { await c.resume(); } catch (e) { /* segue */ } }
+  const src = c.createMediaStreamSource(stream);
+  const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 250;
+  const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 4000;
+  const an = c.createAnalyser(); an.fftSize = 1024;
+  src.connect(hp); hp.connect(lp); lp.connect(an);
+  Object.assign(mic, { ctx: c, an, td: new Float32Array(an.fftSize), stream, soma: 0, cont: 0, ema: null });
+}
+function pararMic() {
+  try { if (mic.stream) mic.stream.getTracks().forEach((t) => t.stop()); } catch (e) { /* ignora */ }
+  try { if (mic.ctx) mic.ctx.close(); } catch (e) { /* ignora */ }
+  mic.stream = null; mic.ctx = null; mic.an = null;
+}
+function lerMic() {
+  if (!mic.an) return;
+  mic.an.getFloatTimeDomainData(mic.td);
+  let s = 0;
+  for (let i = 0; i < mic.td.length; i++) s += mic.td[i] * mic.td[i];
+  mic.soma += s / mic.td.length; mic.cont++;
+}
+function amostraMic() {
+  if (!mic.cont) return null;
+  const rms = Math.sqrt(mic.soma / mic.cont);
+  mic.soma = 0; mic.cont = 0;
+  const db = Math.max(20 * Math.log10(rms + 1e-7), -85);
+  mic.ema = mic.ema === null ? db : mic.ema + (db - mic.ema) * 0.35;
+  return mic.ema;
+}
+
+function aoMover(e) {
+  const a = e.accelerationIncludingGravity;
+  if (!a || a.x == null || a.y == null || a.z == null) return;
+  mov.sx += a.x; mov.sy += a.y; mov.sz += a.z; mov.n++; mov.recebeu = true;
+}
+async function iniciarMov() {
+  if (typeof DeviceMotionEvent === 'undefined') throw new Error('Este navegador não expõe o sensor de movimento. Abra a página no celular.');
+  if (typeof DeviceMotionEvent.requestPermission === 'function') {
+    let r;
+    try { r = await DeviceMotionEvent.requestPermission(); } catch (e) { r = 'negado'; }
+    if (r !== 'granted') throw new Error('O acesso ao sensor de movimento foi negado. No iPhone, permita nos ajustes do Safari e tente de novo.');
+  }
+  mov.sx = mov.sy = mov.sz = 0; mov.n = 0; mov.recebeu = false;
+  window.addEventListener('devicemotion', aoMover); mov.ativo = true;
+  await new Promise((res) => {
+    const t0 = performance.now();
+    const id = setInterval(() => { if (mov.recebeu || performance.now() - t0 > 2200) { clearInterval(id); res(); } }, 100);
+  });
+  if (!mov.recebeu) { pararMov(); throw new Error('Nenhuma leitura do sensor chegou. Em computador isso é normal. Abra no celular, direto em HTTPS.'); }
+}
+function pararMov() { window.removeEventListener('devicemotion', aoMover); mov.ativo = false; }
+function amostraMov() {
+  if (!mov.n) return null;
+  const v = [mov.sx / mov.n, mov.sy / mov.n, mov.sz / mov.n];
+  mov.sx = mov.sy = mov.sz = 0; mov.n = 0;
+  return v;
+}
+function atualizarEixo() {
+  if (bx.length < 50) return;
+  eixo = eixoPrincipal(tirarTendencia(bx), tirarTendencia(by), tirarTendencia(bz), eixo);
+}
+function analisarBarriga() {
+  if (bx.length < FS * 16) return null;
+  atualizarEixo();
+  const dx = tirarTendencia(bx), dy = tirarTendencia(by), dz = tirarTendencia(bz);
+  const sig = dx.map((v, i) => v * eixo[0] + dy[i] * eixo[1] + dz[i] * eixo[2]);
+  return analisar(sig, FS, 0.025);
+}
+function normalizar(arr, eps) {
+  const k = Math.min(150, arr.length), s = arr.slice(arr.length - k);
+  return limita((s[s.length - 1] - media(s)) / (2 * desvio(s) + eps), -1, 1);
+}
+function vivoBarriga() {
+  if (!eixo) return 0;
+  const n = bx.length, k = Math.min(150, n), a = n - k;
+  const mx = media(bx.slice(a)), my = media(by.slice(a)), mz = media(bz.slice(a));
+  const sg = estado.cfg.inverter ? -1 : 1, s = [];
+  for (let i = a; i < n; i++) s.push(sg * ((bx[i] - mx) * eixo[0] + (by[i] - my) * eixo[1] + (bz[i] - mz) * eixo[2]));
+  return normalizar(s, 0.01);
+}
+
+// ---------- sessão ----------
+const INSPIRA = 4, EXPIRA = 6, CICLO = INSPIRA + EXPIRA; // segundos
+const ondaGuiada = (ts) => {
+  const c = ts % CICLO;
+  if (c < INSPIRA) return { v: -Math.cos(Math.PI * c / INSPIRA), fase: 'inspire', p: c / INSPIRA, resta: INSPIRA - c };
+  const e = c - INSPIRA;
+  return { v: Math.cos(Math.PI * e / EXPIRA), fase: 'expire', p: e / EXPIRA, resta: EXPIRA - e };
+};
+const sessao = { modo: 'guiado', rodando: false, iniciando: false, t: 0 };
+let calmaAlvo = 0, calmaS = 0, resp = 0, respAlvo = 0, mostrado = 0, boost = 0, resultado = null, tempo = 0;
+let acAmostra = 0, acAnalise = 0, acSalvar = 0, trava = null, avisoTimer = 0, desbloqueadas = 0;
+
+function zerarBuffers() { bruto = []; bx = []; by = []; bz = []; viz = []; eixo = null; resultado = null; calmaAlvo = 0; acAmostra = 0; acAnalise = 0; }
+function amostrar() {
+  let vivo = 0;
+  if (sessao.modo === 'microfone') {
+    const db = amostraMic();
+    if (db === null) return;
+    bruto.push(db); if (bruto.length > 300) bruto.shift();
+    vivo = normalizar(bruto, 0.4);
+    respAlvo = vivo;
+  } else if (sessao.modo === 'barriga') {
+    const v = amostraMov();
+    if (!v) return;
+    bx.push(v[0]); by.push(v[1]); bz.push(v[2]);
+    if (bx.length > 300) { bx.shift(); by.shift(); bz.shift(); }
+    if (bx.length >= 50 && bx.length % 10 === 0) atualizarEixo();
+    vivo = vivoBarriga();
+    respAlvo = vivo;
+  } else {
+    vivo = ondaGuiada(sessao.t).v;
+  }
+  viz.push(vivo); if (viz.length > 300) viz.shift();
+}
+function analisarAgora() {
+  let r = null;
+  if (sessao.modo === 'microfone') {
+    r = analisar(bruto, FS, 1.2);
+    if (r) r.periodo *= estado.cfg.fatorMic;
+  } else {
+    r = analisarBarriga();
+  }
+  if (r) {
+    if (r.periodo > 0) { const s = pontuarCalma(r.periodo, r.reg, r.qual); r.taxa = s.taxa; r.calma = s.calma; }
+    else { r.taxa = 0; r.calma = 0; }
+  }
+  resultado = r; calmaAlvo = r ? r.calma : 0;
+}
+function passoSessao(dt) {
+  sessao.t += dt;
+  if (sessao.modo === 'guiado') {
+    respAlvo = ondaGuiada(sessao.t).v;
+    calmaAlvo = 0.8 * suave(0, 8, sessao.t);
+    resultado = { taxa: 60 / CICLO, reg: 1, qual: 1, calma: calmaAlvo, periodo: CICLO };
+  } else if (sessao.modo === 'microfone') {
+    lerMic();
+  }
+  acAmostra += dt;
+  while (acAmostra >= 0.1) { acAmostra -= 0.1; amostrar(); }
+  if (sessao.modo !== 'guiado') {
+    acAnalise += dt;
+    if (acAnalise >= 1) { acAnalise = 0; analisarAgora(); }
+  }
+}
+function crescer(dt) {
+  const dm = calmaS * dt / 60;
+  if (dm > 0) {
+    estado.total += dm;
+    estado.prog[estado.sel] = (estado.prog[estado.sel] || 0) + dm;
+  }
+  const n = ESPECIES.filter((e) => estado.total >= e.desbloqueio).length;
+  if (n > desbloqueadas) {
+    desbloqueadas = n;
+    const nova = ESPECIES[n - 1];
+    avisar('Nova semente desbloqueada: ' + nova.nome + '. Ela espera em Sementes.', 12000);
+    montarSementes(); salvar();
+  }
+}
+
+async function travarTela() {
+  try {
+    if ('wakeLock' in navigator && !trava) {
+      trava = await navigator.wakeLock.request('screen');
+      trava.addEventListener('release', () => { trava = null; });
+    }
+  } catch (e) { /* sem wake lock */ }
+}
+function soltarTela() { try { if (trava) trava.release(); } catch (e) { /* ignora */ } trava = null; }
+function avisar(txt, ms) {
+  const a = $('#aviso');
+  clearTimeout(avisoTimer);
+  if (!txt) { a.hidden = true; return; }
+  a.textContent = txt; a.hidden = false;
+  avisoTimer = setTimeout(() => { a.hidden = true; }, ms || 9000);
+}
+function pararProvedor() { pararMic(); pararMov(); }
+
+async function iniciar() {
+  if (sessao.rodando || sessao.iniciando) return;
+  sessao.iniciando = true;
+  const btn = $('#btnIniciar');
+  btn.disabled = true;
+  avisar('');
+  zerarBuffers();
+  let aviso = '';
+  try {
+    if (sessao.modo === 'microfone') { btn.textContent = 'Pedindo permissão…'; await iniciarMic(); }
+    else if (sessao.modo === 'barriga') { btn.textContent = 'Pedindo permissão…'; await iniciarMov(); }
+  } catch (err) {
+    aviso = err.message + ' Usando o modo guiado.';
+    sessao.modo = 'guiado';
+    atualizarModos();
+  }
+  estado.visto = true;
+  sessao.t = 0; sessao.rodando = true; sessao.iniciando = false;
+  btn.disabled = false; btn.textContent = 'Pausar';
+  if (aviso) avisar(aviso, 14000);
+  travarTela(); salvar();
+}
+function pausar() {
+  sessao.rodando = false; sessao.iniciando = false;
+  pararProvedor(); soltarTela();
+  calmaAlvo = 0; salvar();
+  const b = $('#btnIniciar'); b.disabled = false; b.textContent = 'Começar';
+}
+function trocarModo(m) {
+  if (m === sessao.modo) return;
+  if (sessao.rodando) pausar();
+  sessao.modo = m; zerarBuffers(); avisar('');
+  atualizarModos();
+}
+const DICAS = {
+  guiado: 'Acompanhe o ritmo de 6 respirações por minuto. Neste modo o jardim cresce com o tempo, sem medir você.',
+  microfone: 'Celular a uns 15 cm do rosto. Respire com um sopro suave que dê para ouvir, em ambiente silencioso.',
+  barriga: 'Deite com o celular sobre a barriga, tela para cima, e respire devagar sem segurar o aparelho.',
+};
+function textoDica() {
+  const m = sessao.modo;
+  if (!sessao.rodando) return DICAS[m];
+  if (m === 'guiado') return 'Inspire enquanto o círculo cresce (' + INSPIRA + ' s) e expire enquanto ele diminui (' + EXPIRA + ' s).';
+  if (!resultado) return 'Lendo o seu ritmo. Isso leva cerca de 20 s.';
+  if (resultado.qual < 0.3) return m === 'microfone' ? 'Sinal fraco. Chegue o celular mais perto ou sopre um pouco mais alto.' : 'Movimento fraco. Deixe o celular firme sobre a barriga.';
+  if (resultado.reg < 0.3) return 'Ritmo irregular. Tente deixar inspiração e expiração com a mesma duração.';
+  const t = fmt1(resultado.taxa);
+  return resultado.taxa > 10 ? 'Seu ritmo: ' + t + ' resp/min. Desacelere aos poucos, a meta é perto de 6.' : 'Seu ritmo: ' + t + ' resp/min. Continue assim.';
+}
+function atualizarModos() {
+  document.querySelectorAll('.modo').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.modo === sessao.modo)));
+  $('#rotCalma').textContent = sessao.modo === 'guiado' ? 'Constância' : 'Calma';
+  $('#dFonte').textContent = { guiado: 'guiado (sem sensor)', microfone: 'microfone', barriga: 'movimento do celular' }[sessao.modo];
+}
+
+// ---------- espécies e gavetas ----------
+const alvoProg = () => (estado.visto ? (estado.prog[estado.sel] || 0) + boost : DEMO);
+function escolherEspecie(id) {
+  especie = ESPECIES.find((e) => e.id === id) || ESPECIES[0];
+  estado.sel = especie.id; boost = 0;
+  arvore = criarArvore(especie.semente);
+  ajustarEscala(); mostrado = alvoProg();
+  montarSementes(); salvar();
+}
+function montarSementes() {
+  const box = $('#listaSementes');
+  box.textContent = '';
+  ESPECIES.forEach((e) => {
+    const lin = document.createElement('div'); lin.className = 'semente';
+    const dot = document.createElement('i'); dot.style.background = e.cor;
+    const nome = document.createElement('span'); nome.textContent = e.nome;
+    const ac = document.createElement('button'); ac.className = 'btn-sec mini';
+    if (e.id === estado.sel) { ac.textContent = 'Plantada'; ac.disabled = true; }
+    else if (estado.total >= e.desbloqueio) { ac.textContent = 'Plantar'; ac.addEventListener('click', () => escolherEspecie(e.id)); }
+    else { ac.textContent = 'faltam ' + fmt1(e.desbloqueio - estado.total) + ' min'; ac.disabled = true; }
+    lin.append(dot, nome, ac); box.append(lin);
+  });
+  $('#totalCalma').textContent = fmt1(estado.total);
+}
+function alternarGaveta(id, btnId) {
+  const g = $(id), b = $(btnId), abrir = g.hidden;
+  ['#gSementes', '#gDiag'].forEach((x) => { $(x).hidden = true; });
+  ['#btnSementes', '#btnDiag'].forEach((x) => $(x).setAttribute('aria-expanded', 'false'));
+  if (abrir) { g.hidden = false; b.setAttribute('aria-expanded', 'true'); if (id === '#gSementes') montarSementes(); }
+}
+function desenharOnda() {
+  const c = $('#onda'), w = c.clientWidth, h = c.clientHeight;
+  if (!w) return;
+  if (c.width !== Math.round(w * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
+  const g = c.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+  g.strokeStyle = rgba(T['--texto'], 0.18); g.lineWidth = 1;
+  g.beginPath(); g.moveTo(0, h / 2); g.lineTo(w, h / 2); g.stroke();
+  if (viz.length < 2) return;
+  g.strokeStyle = T['--luz']; g.lineWidth = 2; g.lineJoin = 'round'; g.beginPath();
+  viz.forEach((v, i) => { const x = (i / 299) * w, y = h / 2 - v * h * 0.42; if (i) g.lineTo(x, y); else g.moveTo(x, y); });
+  g.stroke();
+}
+
+// ---------- partículas ----------
+const vaga = Array.from({ length: 30 }, (_, i) => ({ x: Math.random(), y: Math.random(), a: Math.random() * 6.283, v: 0.02 + Math.random() * 0.03, f: Math.random() * 6.283, vis: 0, i }));
+const petalas = [], abertas = [], centros = [];
+let acPetala = 0;
+
+function desenharArvore(t, g, B) {
+  const gs = arvore.gal, N = gs.length, px = baseX, py = raizY, sw = reduzMov ? 0.25 : 1;
+  for (let i = 0; i < N; i++) {
+    const b = gs[i];
+    b.p = limita((g - b.nasc) / b.dur);
+    if (b.p <= 0) continue;
+    const pe = 1 - (1 - b.p) * (1 - b.p);
+    const ox = b.pai < 0 ? 0 : gs[b.pai].tx, oy = b.pai < 0 ? 0 : gs[b.pai].ty;
+    const ang = b.ang + Math.sin(t * 0.7 + b.fase + b.prof * 0.5) * 0.012 * (0.5 + b.prof * 0.35) * sw + resp * 0.004 * b.prof * sw;
+    b.ox = ox; b.oy = oy;
+    b.tx = ox + Math.cos(ang) * b.len * pe; b.ty = oy + Math.sin(ang) * b.len * pe;
+  }
+  ctx.lineCap = 'round';
+  for (let i = 0; i < N; i++) {
+    const b = gs[i];
+    if (b.p <= 0) continue;
+    ctx.strokeStyle = coresGalho[b.prof]; ctx.lineWidth = Math.max(0.8, b.w * esc * (0.5 + 0.5 * b.p));
+    ctx.beginPath(); ctx.moveTo(px + b.ox * esc, py + b.oy * esc); ctx.lineTo(px + b.tx * esc, py + b.ty * esc); ctx.stroke();
+  }
+  ctx.globalAlpha = 0.92 * (1 - (especie.perdeFolhas ? 0.55 * B : 0));
+  for (let tom = 0; tom < 3; tom++) {
+    ctx.beginPath(); let alguma = false;
+    for (let i = 0; i < N; i++) {
+      const b = gs[i];
+      if (b.p < 1) continue;
+      const gi = limita((g - (b.nasc + b.dur)) / 0.07);
+      if (gi <= 0) continue;
+      for (const f of b.folhas) {
+        if (f.tom !== tom) continue;
+        const rr = (f.r * esc * b.len * 0.55 + 2.2) * gi * (1 + 0.06 * resp), sp = esc * b.len * 0.7 + 3;
+        const x = px + b.tx * esc + f.dx * sp, y = py + b.ty * esc + f.dy * sp;
+        ctx.moveTo(x + rr, y); ctx.arc(x, y, rr, 0, 6.283); alguma = true;
+      }
+    }
+    if (alguma) { ctx.fillStyle = coresFolha[tom]; ctx.fill(); }
+  }
+  ctx.globalAlpha = 1;
+  abertas.length = 0; centros.length = 0;
+  if (B > 0) {
+    ctx.fillStyle = especie.cor; ctx.beginPath();
+    for (let i = 0; i < N; i++) {
+      const b = gs[i];
+      if (b.p < 1 || !b.flores.length) continue;
+      for (const f of b.flores) {
+        const o = limita((B - f.lim) / 0.2);
+        if (o <= 0) continue;
+        const sp = esc * b.len * 0.5 + 3, x = px + b.tx * esc + f.dx * sp, y = py + b.ty * esc + f.dy * sp;
+        const pr = (3.2 + esc * 0.006) * o * (1 + 0.07 * resp);
+        for (let k = 0; k < 5; k++) {
+          const a = f.rot + k * 1.2566, cx = x + Math.cos(a) * pr * 0.9, cy = y + Math.sin(a) * pr * 0.9;
+          ctx.moveTo(cx + pr * 0.7, cy); ctx.arc(cx, cy, pr * 0.7, 0, 6.283);
+        }
+        centros.push(x, y, pr * 0.45);
+        if (o > 0.6) abertas.push(x, y);
+      }
+    }
+    ctx.fill();
+    ctx.fillStyle = especie.miolo; ctx.beginPath();
+    for (let i = 0; i < centros.length; i += 3) { ctx.moveTo(centros[i] + centros[i + 2], centros[i + 1]); ctx.arc(centros[i], centros[i + 1], centros[i + 2], 0, 6.283); }
+    ctx.fill();
+  }
+}
+
+function desenhar(dt) {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  ctx.drawImage(fundoC, 0, 0, W, H);
+  for (const s of estrelas) {
+    ctx.globalAlpha = 0.25 + 0.5 * (0.5 + 0.5 * Math.sin(tempo * 0.6 + s.ph));
+    ctx.fillStyle = T['--texto']; ctx.beginPath(); ctx.arc(s.x * W, s.y * chao, s.r, 0, 6.283); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  const prog = mostrado, g = limita(prog / T_ARV), B = limita((prog - 2.5) / 4);
+  const hCresc = esc * arvore.altU * suave(0, 0.9, g);
+  const hy = raizY - hCresc * 0.6, R = (70 + hCresc * 0.55) * (1 + 0.12 * resp);
+  const hg = ctx.createRadialGradient(baseX, hy, 0, baseX, hy, R);
+  hg.addColorStop(0, rgba(T['--luz'], 0.08 + 0.2 * calmaS)); hg.addColorStop(1, rgba(T['--luz'], 0));
+  ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(baseX, hy, R, 0, 6.283); ctx.fill();
+  ctx.fillStyle = T['--galho']; ctx.beginPath(); ctx.arc(baseX, raizY, 3, 0, 6.283); ctx.fill();
+  desenharArvore(tempo, g, B);
+
+  // pétalas caindo
+  if (B > 0.3 && abertas.length) {
+    acPetala += dt * 1.6 * B * (0.3 + calmaS);
+    while (acPetala >= 1 && petalas.length < 50) {
+      acPetala -= 1;
+      const k = Math.floor(Math.random() * (abertas.length / 2)) * 2;
+      petalas.push({ x: abertas[k], y: abertas[k + 1], vy: 12 + Math.random() * 12, ph: Math.random() * 6.283, rot: Math.random() * 6.283 });
+    }
+    acPetala = Math.min(acPetala, 2);
+  }
+  ctx.fillStyle = especie.cor;
+  for (let i = petalas.length - 1; i >= 0; i--) {
+    const p = petalas[i];
+    p.y += p.vy * dt; p.x += Math.sin(tempo * 0.9 + p.ph) * 14 * dt; p.rot += dt;
+    const solo = yColina(1, Math.min(1, Math.max(0, p.x / W))) + 4;
+    if (p.y > solo) { petalas.splice(i, 1); continue; }
+    ctx.globalAlpha = 0.85 * limita((solo - p.y) / 30);
+    ctx.beginPath(); ctx.ellipse(p.x, p.y, 3.2, 1.8, p.rot, 0, 6.283); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // vagalumes
+  const topoV = chao - alturaArv * 0.9, baixoV = chao + H * 0.02;
+  for (const f of vaga) {
+    f.vis += ((f.i < calmaS * 30 ? 1 : 0) - f.vis) * (1 - Math.exp(-dt / 1.5));
+    if (!reduzMov) {
+      f.a += (Math.random() - 0.5) * dt * 3;
+      f.x += Math.cos(f.a) * f.v * dt; f.y += Math.sin(f.a) * f.v * dt * 0.7;
+      if (f.x < 0.03 || f.x > 0.97) { f.a = Math.PI - f.a; f.x = limita(f.x, 0.03, 0.97); }
+      if (f.y < 0.02 || f.y > 0.98) { f.a = -f.a; f.y = limita(f.y, 0.02, 0.98); }
+    }
+    if (f.vis < 0.02) continue;
+    const x = f.x * W, y = topoV + f.y * (baixoV - topoV);
+    const pisca = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(tempo * 1.6 + f.f)), a = f.vis * pisca;
+    ctx.fillStyle = rgba(T['--luz'], 0.12 * a); ctx.beginPath(); ctx.arc(x, y, 9, 0, 6.283); ctx.fill();
+    ctx.fillStyle = rgba(T['--luz'], 0.9 * a); ctx.beginPath(); ctx.arc(x, y, 1.9, 0, 6.283); ctx.fill();
+  }
+
+  desenharGuia(dt);
+  ctx.drawImage(frenteC, 0, 0, W, H);
+
+  // flores no chão: crescem com os minutos acumulados
+  const nFlor = Math.min(40, Math.floor(estado.total * 1.4));
+  const livres = ESPECIES.filter((e) => estado.total >= e.desbloqueio);
+  for (let i = 0; i < nFlor; i++) {
+    const f = florChao[i], e = livres[Math.floor(f.tom * livres.length)] || ESPECIES[0];
+    const x = f.x * W, y = yColina(2, f.x) + 8 + f.dy * 10;
+    ctx.strokeStyle = T['--folha']; ctx.globalAlpha = 0.7; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - f.h); ctx.stroke();
+    ctx.globalAlpha = 1; ctx.fillStyle = e.cor; ctx.beginPath(); ctx.arc(x, y - f.h, 2.6, 0, 6.283); ctx.fill();
+  }
+}
+
+// ---------- interface ----------
+let ultimaDica = '', acUI = 0;
+function atualizarUI() {
+  $('#tempo').textContent = fmtTempo(sessao.t);
+  $('#acum').textContent = 'acumulado ' + fmt1(estado.total) + ' min';
+  $('#taxa').textContent = resultado && resultado.taxa > 0 ? fmt1(resultado.taxa) : '—';
+  $('#calma').textContent = Math.round(calmaS * 100) + '%';
+  $('#barra').style.width = Math.round(calmaS * 100) + '%';
+  const d = textoDica();
+  if (d !== ultimaDica) { $('#dica').textContent = d; ultimaDica = d; }
+  if (!$('#gDiag').hidden) {
+    $('#dPer').textContent = resultado && resultado.periodo > 0 ? fmt1(resultado.periodo) + ' s' : '—';
+    $('#dReg').textContent = resultado ? Math.round(resultado.reg * 100) + '%' : '—';
+    $('#dQual').textContent = resultado ? Math.round(resultado.qual * 100) + '%' : '—';
+    desenharOnda();
+  }
+}
+// Círculo guiado: cresce na inspiração, encolhe na expiração; o anel externo mostra o progresso da fase.
+const cueEl = $('#cue'), cueFase = $('#cueFase'), cueSeg = $('#cueSeg');
+let guiaVis = 0, ultFase = '', ultSeg = '';
+function desenharGuia(dt) {
+  const ativo = sessao.rodando && sessao.modo === 'guiado';
+  guiaVis += ((ativo ? 1 : 0) - guiaVis) * (1 - Math.exp(-dt / 0.5));
+  if (guiaVis < 0.02) { cueEl.style.opacity = '0'; return; }
+  const o = ondaGuiada(sessao.t), ins = o.fase === 'inspire';
+  const S = Math.min(W * 0.5, alturaArv * 0.5), rMin = S * 0.4, rMax = S * 0.8;
+  const cx = baseX, cy = raizY - alturaArv * 0.5;
+  const r = rMin + (rMax - rMin) * (o.v + 1) / 2;
+  const cor = ins ? T['--luz'] : T['--folha'];
+  ctx.save();
+  ctx.globalAlpha = guiaVis;
+  ctx.lineWidth = 1; ctx.strokeStyle = rgba(T['--texto'], 0.25); ctx.setLineDash([3, 6]);
+  ctx.beginPath(); ctx.arc(cx, cy, rMax, 0, 6.283); ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx, cy, rMin, 0, 6.283); ctx.stroke();
+  ctx.setLineDash([]);
+  const g = ctx.createRadialGradient(cx, cy, r * 0.2, cx, cy, r);
+  g.addColorStop(0, rgba(T['--ceu-topo'], 0.6)); g.addColorStop(0.75, rgba(cor, 0.16)); g.addColorStop(1, rgba(cor, 0.34));
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, r, 0, 6.283); ctx.fill();
+  ctx.lineWidth = 2; ctx.strokeStyle = rgba(cor, 0.95); ctx.beginPath(); ctx.arc(cx, cy, r, 0, 6.283); ctx.stroke();
+  const ra = rMax + 9, ini = -Math.PI / 2, frac = ins ? o.p : 1 - o.p;
+  ctx.lineWidth = 4; ctx.lineCap = 'round';
+  ctx.strokeStyle = rgba(T['--texto'], 0.12); ctx.beginPath(); ctx.arc(cx, cy, ra, 0, 6.283); ctx.stroke();
+  if (frac > 0.005) { ctx.strokeStyle = cor; ctx.beginPath(); ctx.arc(cx, cy, ra, ini, ini + 6.283 * frac); ctx.stroke(); }
+  ctx.restore();
+  cueEl.style.top = cy + 'px'; cueEl.style.opacity = guiaVis.toFixed(2);
+  if (o.fase !== ultFase) { cueFase.textContent = o.fase; ultFase = o.fase; }
+  const seg = String(Math.ceil(o.resta));
+  if (seg !== ultSeg) { cueSeg.textContent = seg; ultSeg = seg; }
+}
+
+let ultimo = 0;
+function quadro(agora) {
+  const dt = Math.min(0.1, ((agora - ultimo) / 1000) || 0.016);
+  ultimo = agora; tempo += dt;
+  if (W && H) {
+    if (sessao.rodando && !document.hidden) passoSessao(dt);
+    if (!sessao.rodando) { respAlvo = 0.5 * ondaGuiada(tempo).v; }
+    calmaS += (calmaAlvo - calmaS) * (1 - Math.exp(-dt / (sessao.rodando ? 5 : 3)));
+    if (sessao.rodando && !document.hidden) {
+      crescer(dt);
+      acSalvar += dt;
+      if (acSalvar > 10) { acSalvar = 0; salvar(); }
+    }
+    resp += (respAlvo - resp) * (1 - Math.exp(-dt / 0.18));
+    const alvo = alvoProg();
+    mostrado += (alvo - mostrado) * (1 - Math.exp(-dt / (estado.visto ? 0.6 : 0.4)));
+    desenhar(dt);
+    acUI += dt;
+    if (acUI >= 0.25) { acUI = 0; atualizarUI(); }
+  }
+  requestAnimationFrame(quadro);
+}
+
+// ---------- eventos ----------
+document.querySelectorAll('.modo').forEach((b) => b.addEventListener('click', () => trocarModo(b.dataset.modo)));
+$('#btnIniciar').addEventListener('click', () => { if (sessao.rodando) pausar(); else iniciar(); });
+$('#btnSementes').addEventListener('click', () => alternarGaveta('#gSementes', '#btnSementes'));
+$('#btnDiag').addEventListener('click', () => alternarGaveta('#gDiag', '#btnDiag'));
+document.querySelectorAll('[data-fator]').forEach((b) => b.addEventListener('click', () => {
+  estado.cfg.fatorMic = +b.dataset.fator; salvar(); sincronizarAjustes();
+}));
+$('#btnInv').addEventListener('click', () => { estado.cfg.inverter = !estado.cfg.inverter; salvar(); sincronizarAjustes(); });
+$('#btnPrev').addEventListener('click', () => { boost += 1; });
+let zerarTimer = 0;
+$('#btnZerar').addEventListener('click', () => {
+  const b = $('#btnZerar');
+  if (b.dataset.confirma === '1') {
+    clearTimeout(zerarTimer); b.dataset.confirma = ''; b.textContent = 'Zerar jardim';
+    estado = padrao(); desbloqueadas = 1; salvar(); escolherEspecie(estado.sel); sincronizarAjustes();
+  } else {
+    b.dataset.confirma = '1'; b.textContent = 'Toque de novo para apagar tudo';
+    zerarTimer = setTimeout(() => { b.dataset.confirma = ''; b.textContent = 'Zerar jardim'; }, 4000);
+  }
+});
+function sincronizarAjustes() {
+  document.querySelectorAll('[data-fator]').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.fator === estado.cfg.fatorMic)));
+  $('#btnInv').setAttribute('aria-pressed', String(!!estado.cfg.inverter));
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) salvar();
+  else if (sessao.rodando) travarTela();
+});
+window.addEventListener('pagehide', salvar);
+
+// ---------- início ----------
+lerTokens();
+coresGalho = Array.from({ length: 9 }, (_, i) => misturar(T['--tronco'], T['--galho'], i / 8));
+coresFolha = [T['--folha'], misturar(T['--folha'], '#0c231f', 0.35), misturar(T['--folha'], '#dff5d0', 0.25)];
+desbloqueadas = ESPECIES.filter((e) => estado.total >= e.desbloqueio).length;
+escolherEspecie(estado.sel);
+sincronizarAjustes(); atualizarModos();
+if (typeof ResizeObserver !== 'undefined') { const ro = new ResizeObserver(() => layout()); ro.observe(app); ro.observe(painel); }
+window.addEventListener('resize', layout);
+layout();
+atualizarUI();
+requestAnimationFrame(quadro);
+})();
+</script>
+</body></html>
